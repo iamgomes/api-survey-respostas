@@ -64,6 +64,29 @@ def export_responses(key, sid):
     return decodeRespostas
 
 
+def list_participants(key, sid):
+    conn = http.client.HTTPSConnection(url)
+    payload = json.dumps({
+        "method": "list_participants",
+        "params": [
+            "9IwXpk~70VlYHsJJvUGbBNs66KbFD0EC",
+            "974931",
+            1,
+            20
+            ],
+        "id": 1
+        })
+    headers = {
+    'Content-Type': 'application/json'
+    }
+    conn.request("POST", url_remotecontrol, payload, headers)
+    res = conn.getresponse()
+    data = res.read()
+    result = json.loads(data)['result']
+
+    return result
+
+
 def lime_respostas(request, sid):
     key = get_session_key(USER, PASSWORD)
     respostas = export_responses(key, sid=sid)
@@ -71,3 +94,11 @@ def lime_respostas(request, sid):
     data = df.to_dict(orient='list')
 
     return JsonResponse(data, safe=False, json_dumps_params={'ensure_ascii':False}, status=200)
+
+
+def lista_participantes(request, sid):
+    key = get_session_key(USER, PASSWORD)
+    participantes = list_participants(key, sid=sid)
+
+
+    return JsonResponse(participantes, safe=False, json_dumps_params={'ensure_ascii':False}, status=200)

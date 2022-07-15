@@ -1,1 +1,1 @@
-web: python manage.py run_gunicorn -b 0.0.0.0:$PORT -c config/gunicorn.conf
+web: gunicorn core.wsgi
