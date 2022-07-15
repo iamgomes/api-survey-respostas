@@ -1,16 +1,15 @@
-from django.shortcuts import render
 from django.http import JsonResponse, HttpResponse
 import http.client
 import json
 import base64
 import pandas as pd
 import io
-import os
+from decouple import config
 
 url = "limesurvey.tce.mt.gov.br"
 url_remotecontrol = "/index.php/admin/remotecontrol"
-USER="wgomes"
-PASSWORD="tcemt@2022"
+USER=config('USER')
+PASSWORD=config('PASSWORD')
 
 
 def get_session_key(user, password):
