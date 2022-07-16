@@ -1,42 +1,39 @@
 from django.http import JsonResponse, HttpResponse
-import http.client
+import requests
 import json
 import base64
 import pandas as pd
 import io
 from decouple import config
+import urllib3
+urllib3.disable_warnings()
 
-url = "limesurvey.tce.mt.gov.br"
-url_remotecontrol = "/index.php/admin/remotecontrol"
+url = "https://limesurvey.tce.mt.gov.br/index.php/admin/remotecontrol"
 USER=config('USER')
 PASSWORD=config('PASSWORD')
 
 
 def get_session_key(user, password):
-    conn = http.client.HTTPSConnection(url)
     payload = json.dumps({
         "method": "get_session_key",
         "params": [
             user,
             password
-    ],
-    "id": 1
+            ],
+        "id": 1
     })
-    
+
     headers = {
     'Content-Type': 'application/json'
     }
 
-    conn.request("POST", url_remotecontrol, payload, headers)
-    res = conn.getresponse()
-    data = res.read()
-    key = json.loads(data)['result']
+    response = requests.request("POST", url, headers=headers, data=payload, verify=False)
+    data = response.json()['result']
 
-    return key
+    return data
 
 
 def export_responses(key, sid):
-    conn = http.client.HTTPSConnection(url)
     payload = json.dumps({
         "method": "export_responses",
         "params": [
@@ -48,44 +45,46 @@ def export_responses(key, sid):
             "code",
             "long"
             ],
-    "id": 1
+        "id": 1
     })
 
     headers = {
     'Content-Type': 'application/json'
     }
-    conn.request("POST", url_remotecontrol, payload, headers)
-    res = conn.getresponse()
-    data = res.read()
-    result = json.loads(data)['result']
+    
+    response = requests.request("POST", url, headers=headers, data=payload, verify=False)
+    data = response.json()['result']
 
-    decodeRespostas = base64.b64decode(result).decode('UTF-8')
-
-    return decodeRespostas
+    return base64.b64decode(data).decode('UTF-8')
 
 
 def list_participants(key, sid):
-    conn = http.client.HTTPSConnection(url)
     payload = json.dumps({
         "method": "list_participants",
         "params": [
-            "9IwXpk~70VlYHsJJvUGbBNs66KbFD0EC",
-            "974931",
+            key,
+            sid,
             1,
             20
             ],
         "id": 1
-        })
+    })
+
     headers = {
-    'Content-Type': 'application/json'
+        'Content-Type': 'application/json'
     }
-    conn.request("POST", url_remotecontrol, payload, headers)
-    res = conn.getresponse()
-    data = res.read()
-    result = json.loads(data)['result']
 
-    return result
+    response = requests.request("POST", url, headers=headers, data=payload, verify=False)
+    data = response.json()['result']
 
+    return data
+
+
+def sessao(request):
+    se = get_session_key(USER, PASSWORD)
+
+    return HttpResponse(se)
+    
 
 def lime_respostas(request, sid):
     key = get_session_key(USER, PASSWORD)
@@ -99,6 +98,5 @@ def lime_respostas(request, sid):
 def lista_participantes(request, sid):
     key = get_session_key(USER, PASSWORD)
     participantes = list_participants(key, sid=sid)
-
 
     return JsonResponse(participantes, safe=False, json_dumps_params={'ensure_ascii':False}, status=200)
